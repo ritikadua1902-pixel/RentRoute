@@ -8,7 +8,7 @@ function Cars() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch cars list from backend Express API
+
     fetch('http://localhost:5000/api/cars')
       .then((res) => res.json())
       .then((data) => {
@@ -21,7 +21,6 @@ function Cars() {
       });
   }, []);
 
-  // Filter cars based on search input and type filter
   const filteredCars = cars.filter((car) => {
     const matchesSearch =
       car.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,7 +35,6 @@ function Cars() {
     <div className="container">
       <h2 className="section-title">Available Cars</h2>
 
-      {/* Search and Filter Controls */}
       <div className="filter-container">
         <input
           type="text"
@@ -58,7 +56,6 @@ function Cars() {
         </select>
       </div>
 
-      {/* Cars Grid Listing */}
       {loading ? (
         <p style={{ textAlign: 'center', padding: '40px' }}>Loading available cars...</p>
       ) : filteredCars.length > 0 ? (

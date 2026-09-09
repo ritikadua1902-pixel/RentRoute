@@ -1,9 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
+function getTodayISO() {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function Booking() {
   const { id } = useParams();
   const navigate = useNavigate();
+
+  const todayISO = getTodayISO();
 
   const [car, setCar] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +28,10 @@ function Booking() {
   const [pickupDate, setPickupDate] = useState('');
   const [returnDate, setReturnDate] = useState('');
 
-  // Get selected car
+  const [errorMessage, setErrorMessage] = useState('');
+  const [routeInfoMessage, setRouteInfoMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   useEffect(() => {
     fetch('http://localhost:5000/api/cars')
       .then((res) => res.json())
@@ -36,11 +49,59 @@ function Booking() {
       });
   }, [id]);
 
-  // Calculate rental price
+  const handlePickupDateChange = (e) => {
+    const selected = e.target.value;
+    setPickupDate(selected);
+    setErrorMessage('');
+
+    if (selected && selected < todayISO) {
+      setErrorMessage("Pickup date cannot be before today's date.");
+    } else if (selected && returnDate && returnDate < selected) {
+      setErrorMessage("Return date cannot be before the pickup date.");
+    }
+  };
+
+  const handleReturnDateChange = (e) => {
+    const selected = e.target.value;
+    setReturnDate(selected);
+    setErrorMessage('');
+
+    if (pickupDate && selected < pickupDate) {
+      setErrorMessage("Return date cannot be before the pickup date.");
+    }
+  };
+
+  const handleCheckRoute = () => {
+    setRouteInfoMessage('');
+    if (!pickupLocation || !destination) {
+      setRouteInfoMessage('Please enter both pickup location and destination to check route.');
+      return;
+    }
+
+    fetch('http://localhost:5000/api/calculate-route', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pickupLocation, destination })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!data.success) {
+          setRouteInfoMessage(
+            data.error || 'OpenRouteService is currently unavailable. Standard rental rates will apply.'
+          );
+        } else {
+          setRouteInfoMessage('Route information retrieved successfully.');
+        }
+      })
+      .catch(() => {
+        setRouteInfoMessage('Unable to connect to route service. Standard rental rates will apply.');
+      });
+  };
+
   const calculatePricing = () => {
     let rentalDays = 1;
 
-    if (pickupDate && returnDate) {
+    if (pickupDate && returnDate && returnDate >= pickupDate) {
       const start = new Date(pickupDate);
       const end = new Date(returnDate);
 
@@ -70,9 +131,9 @@ function Booking() {
 
   const pricing = calculatePricing();
 
-  // Submit booking
   const handleSubmit = (e) => {
     e.preventDefault();
+    setErrorMessage('');
 
     if (
       !customerName ||
@@ -83,11 +144,23 @@ function Booking() {
       !pickupDate ||
       !returnDate
     ) {
-      alert('Please fill in all fields.');
+      setErrorMessage('Please fill in all required fields.');
       return;
     }
 
-    const booking = {
+    if (pickupDate < todayISO) {
+      setErrorMessage("Pickup date cannot be before today's date.");
+      return;
+    }
+
+    if (returnDate < pickupDate) {
+      setErrorMessage("Return date cannot be before the pickup date.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const bookingPayload = {
       customerName,
       email,
       phone,
@@ -95,18 +168,32 @@ function Booking() {
       destination,
       pickupDate,
       returnDate,
-      carName: car.name,
-      carBrand: car.brand,
-      rentalDays: pricing.rentalDays,
-      dailyPrice: pricing.dailyPrice,
-      totalPrice: pricing.totalPrice
+      carId: car.id
     };
 
-    console.log('Booking:', booking);
-
-    navigate('/confirmation', {
-      state: { booking: booking }
-    });
+    fetch('http://localhost:5000/api/bookings', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(bookingPayload)
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setIsSubmitting(false);
+        if (data.success) {
+          navigate('/confirmation', {
+            state: { booking: data.booking }
+          });
+        } else {
+          setErrorMessage(data.error || 'Booking failed. Please check your inputs.');
+        }
+      })
+      .catch((error) => {
+        setIsSubmitting(false);
+        console.error('Booking submission error:', error);
+        setErrorMessage('Server error while processing booking. Please try again.');
+      });
   };
 
   if (loading) {
@@ -115,6 +202,14 @@ function Booking() {
         <p style={{ textAlign: 'center', padding: '40px' }}>
           Loading car details...
         </p>
+      </div>
+    );
+  }
+
+  if (!car) {
+    return (
+      <div className="container">
+        <h2 style={{ textAlign: 'center', padding: '40px' }}>Car not found.</h2>
       </div>
     );
   }
@@ -186,9 +281,7 @@ function Booking() {
                   className="form-control"
                   placeholder="Enter pickup location"
                   value={pickupLocation}
-                  onChange={(e) =>
-                    setPickupLocation(e.target.value)
-                  }
+                  onChange={(e) => setPickupLocation(e.target.value)}
                 />
               </div>
 
@@ -200,12 +293,26 @@ function Booking() {
                   className="form-control"
                   placeholder="Enter destination"
                   value={destination}
-                  onChange={(e) =>
-                    setDestination(e.target.value)
-                  }
+                  onChange={(e) => setDestination(e.target.value)}
                 />
               </div>
 
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ fontSize: '13px', padding: '6px 12px' }}
+                onClick={handleCheckRoute}
+              >
+                Check Route Service
+              </button>
+              {routeInfoMessage && (
+                <p style={{ fontSize: '13px', color: '#64748b', marginTop: '6px' }}>
+                  {routeInfoMessage}
+                </p>
+              )}
             </div>
 
             <h3>3. Travel Dates</h3>
@@ -218,10 +325,9 @@ function Booking() {
                 <input
                   type="date"
                   className="form-control"
+                  min={todayISO}
                   value={pickupDate}
-                  onChange={(e) =>
-                    setPickupDate(e.target.value)
-                  }
+                  onChange={handlePickupDateChange}
                 />
               </div>
 
@@ -231,25 +337,32 @@ function Booking() {
                 <input
                   type="date"
                   className="form-control"
+                  min={pickupDate || todayISO}
                   value={returnDate}
-                  onChange={(e) =>
-                    setReturnDate(e.target.value)
-                  }
+                  onChange={handleReturnDateChange}
                 />
               </div>
 
             </div>
 
+            {errorMessage && (
+              <div className="alert-danger" style={{ marginBottom: '20px' }}>
+                {errorMessage}
+              </div>
+            )}
+
             <button
               type="submit"
               className="btn"
+              disabled={isSubmitting}
               style={{
                 width: '100%',
                 padding: '12px',
-                fontSize: '16px'
+                fontSize: '16px',
+                opacity: isSubmitting ? 0.7 : 1
               }}
             >
-              Confirm & Book Now
+              {isSubmitting ? 'Booking...' : 'Confirm & Book Now'}
             </button>
 
           </form>

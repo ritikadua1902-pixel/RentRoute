@@ -7,7 +7,6 @@ function CarDetails() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch cars from API and find selected car
     fetch('http://localhost:5000/api/cars')
       .then((res) => res.json())
       .then((data) => {

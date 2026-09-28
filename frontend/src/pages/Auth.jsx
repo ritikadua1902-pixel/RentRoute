@@ -5,18 +5,15 @@ function Auth() {
   const navigate = useNavigate();
 
   const [isLogin, setIsLogin] = useState(true);
-
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     setMessage('');
     setError('');
 
@@ -26,11 +23,35 @@ function Auth() {
         return;
       }
 
-      setMessage('Login successful! Welcome back to RentRoute.');
+      try {
+        const response = await fetch("http://localhost:5000/logindata", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            email,
+            password
+          })
+        });
 
-      setTimeout(() => {
-        navigate('/');
-      }, 500);
+        const data = await response.json();
+
+        if (data.error) {
+          setError(data.error);
+          return;
+        }
+
+        setMessage('Login successful! Welcome back to RentRoute.');
+
+        setTimeout(() => {
+          navigate('/');
+        }, 500);
+
+      } catch (err) {
+        setError('Unable to connect to server.');
+      }
+
     } else {
       if (!name || !email || !password || !confirmPassword) {
         setError('Please fill in all required fields.');
@@ -42,11 +63,35 @@ function Auth() {
         return;
       }
 
-      setMessage('Account created successfully!');
+      try {
+        const response = await fetch("http://localhost:5000/signupdata", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            name,
+            email,
+            password
+          })
+        });
 
-      setTimeout(() => {
-        navigate('/');
-      }, 500);
+        const data = await response.json();
+
+        if (data.error) {
+          setError(data.error);
+          return;
+        }
+
+        setMessage('Account created successfully!');
+
+        setTimeout(() => {
+          navigate('/');
+        }, 500);
+
+      } catch (err) {
+        setError('Unable to connect to server.');
+      }
     }
   };
 
@@ -113,6 +158,7 @@ function Auth() {
 
           {!isLogin && (
             <div className="form-group">
+
               <label htmlFor="auth-name">
                 Full Name *
               </label>
@@ -126,10 +172,12 @@ function Auth() {
                 onChange={(e) => setName(e.target.value)}
                 required={!isLogin}
               />
+
             </div>
           )}
 
           <div className="form-group">
+
             <label htmlFor="auth-email">
               Email Address *
             </label>
@@ -143,9 +191,11 @@ function Auth() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+
           </div>
 
           <div className="form-group">
+
             <label htmlFor="auth-password">
               Password *
             </label>
@@ -159,10 +209,12 @@ function Auth() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+
           </div>
 
           {!isLogin && (
             <div className="form-group">
+
               <label htmlFor="auth-confirm-password">
                 Confirm Password *
               </label>
@@ -176,6 +228,7 @@ function Auth() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required={!isLogin}
               />
+
             </div>
           )}
 

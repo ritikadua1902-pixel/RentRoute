@@ -1,21 +1,89 @@
-# RentRoute - Car Rental System
+# RentRoute
 
-RentRoute is a car rental web application designed for a college student project.
-It allows users to view available cars, check car specifications, select rental dates, calculate pricing, and submit car rental bookings.
+RentRoute is a simple car rental web application where users can view available cars, select a car, enter pickup and return details, calculate routes, and confirm a booking.
 
-## Tech Stack
-- **Frontend**: React, React Router DOM, CSS3
-- **Backend**: Node.js, Express.js, CORS
-- **Database / Storage**: In-memory dataset / Local Storage
+## Features
 
-## Getting Started
+* View available cars
+* View car details
+* Select pickup and return dates
+* Validate booking dates
+* Calculate route using OpenRouteService
+* Calculate rental price
+* Confirm booking
+* Simple login/signup pages
 
-### Backend Setup
-1. `cd backend`
-2. `npm install`
-3. `npm start` (Runs on http://localhost:5000)
+## Technologies Used
 
-### Frontend Setup
-1. `cd frontend`
-2. `npm install`
-3. `npm run dev` (Runs on http://localhost:5173)
+### Frontend
+
+* React
+* CSS
+* JavaScript
+
+### Backend
+
+* Node.js
+* Express.js
+
+### APIs
+
+* OpenRouteService API
+
+## Project Structure
+
+```text
+RentRoute/
+│
+├── backend/
+│   ├── photos/
+│   ├── server.js
+│   └── package.json
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   └── package.json
+│
+└── README.md
+```
+
+## How to Run
+
+### Backend
+
+```bash
+cd backend
+npm install
+node server.js
+```
+
+The backend runs on:
+
+```text
+http://localhost:5000
+```
+
+### Frontend
+
+Open another terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will run on the Vite development server.
+
+## Note
+
+The OpenRouteService API key is stored in the `.env` file and should not be uploaded to GitHub.
+
+## Future Improvements
+
+* Online payment
+* Better authentication
+* Admin panel
+* Database integration
+* Booking history

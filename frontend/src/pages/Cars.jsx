@@ -8,11 +8,14 @@ function Cars() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     fetch('http://localhost:5000/api/cars')
       .then((res) => res.json())
       .then((data) => {
-        setCars(data);
+        if (Array.isArray(data)) {
+          setCars(data);
+        } else {
+          setCars([]);
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -24,7 +27,7 @@ function Cars() {
   const filteredCars = cars.filter((car) => {
     const matchesSearch =
       car.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      car.brand.toLowerCase().includes(searchTerm.toLowerCase());
+      (car.brand && car.brand.toLowerCase().includes(searchTerm.toLowerCase()));
 
     const matchesType = selectedType === 'All' || car.type === selectedType;
 
@@ -61,7 +64,7 @@ function Cars() {
       ) : filteredCars.length > 0 ? (
         <div className="cars-grid">
           {filteredCars.map((car) => (
-            <CarCard key={car.id} car={car} />
+            <CarCard key={car._id || car.id} car={car} />
           ))}
         </div>
       ) : (

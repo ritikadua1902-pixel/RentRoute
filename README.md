@@ -65,7 +65,7 @@ RentRoute/
 │   ├── routes/
 │   ├── utils/
 │   ├── photos/
-│   ├── server.js
+│   ├── index.mjs
 │   ├── .env
 │   └── package.json
 │
